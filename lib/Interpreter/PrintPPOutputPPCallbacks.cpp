@@ -221,11 +221,11 @@ void PrintPPOutputPPCallbacks::InclusionDirective(SourceLocation HashLoc,
 
 /// Ident - Handle #ident directives when read by the preprocessor.
 ///
-void PrintPPOutputPPCallbacks::Ident(SourceLocation Loc, const std::string &str) {
+void PrintPPOutputPPCallbacks::Ident(SourceLocation Loc, StringRef str) {
     MoveToLine(Loc);
 
     OS.write("#ident ", strlen("#ident "));
-    OS.write(str.c_str(), strlen(str.c_str()));
+    OS.write(str.begin(), str.size());
     EmittedTokensOnThisLine = true;
 }
 

@@ -78,7 +78,7 @@ class PrintPPOutputPPCallbacks : public PPCallbacks {
                                 CharSourceRange FilenameRange, const FileEntry *File,
                                 StringRef SearchPath, StringRef RelativePath,
                                 const Module *Imported) override;
-        void Ident(SourceLocation Loc, const std::string &str) override;
+        void Ident(SourceLocation Loc, StringRef str) override;
         void PragmaMessage(SourceLocation Loc, StringRef Namespace,
                            PragmaMessageKind Kind, StringRef Str) override;
         void PragmaDebug(SourceLocation Loc, StringRef DebugType) override;
