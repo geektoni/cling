@@ -70,6 +70,7 @@ add_cling_library(clingInterpreter OBJECT
   InvocationOptions.cpp
   LookupHelper.cpp
   NullDerefProtectionTransformer.cpp
+  PrintPPOutputPPCallbacks.cpp
   RequiredSymbols.cpp
   Transaction.cpp
   TransactionUnloader.cpp
