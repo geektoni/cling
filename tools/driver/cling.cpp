@@ -52,6 +52,16 @@ int main( int argc, char **argv ) {
   // Run only the preprocessor if -E provided
   if (interp.getOptions().PreprocessorOnly && !Interactive) {
 
+    // FIX ME
+    // Regenerate the preprocessor to silence this assert error:
+    //
+    // src/tools/clang/lib/Lex/Preprocessor.cpp:537:
+    // void clang::Preprocessor::EnterMainSourceFile():
+    // Assertion `NumEnteredSourceFiles == 0 &&
+    // "Cannot reenter the main file!"' failed.
+    //
+    // This operation leads to a segmentation fault later during
+    // the driver execution.
     CI->createPreprocessor(clang::TU_Complete);
 
     const clang::FileEntry * pFile = CI->getFileManager().getFile(Inputs[0]);
@@ -63,7 +73,6 @@ int main( int argc, char **argv ) {
     CI->getPreprocessorOutputOpts().ShowCPP = 1;
     clang::DoPrintPreprocessedInput(CI->getPreprocessor(), &llvm::outs(),
                                     CI->getPreprocessorOutputOpts());
-
 
     return 0;
 
