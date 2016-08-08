@@ -35,7 +35,7 @@ See our [release notes](docs/ReleaseNotes.md) to find what's new.
 
 ### Binaries
 Our nightly binary snapshots can be found
-[here](for download at https://root.cern.ch/download/cling/)
+[here](https://root.cern.ch/download/cling/).
 
 
 ### Building from Source with Cling Packaging Tool
@@ -53,23 +53,22 @@ wget https://raw.githubusercontent.com/root-mirror/cling/master/tools/packaging/
 chmod +x cpt.py
 ./cpt.py --check-requirements && ./cpt.py --create-dev-env Debug --with-workdir=./cling-build/
 ```
-
-Usage
------
 Full documentation of CPT can be found in [tools/packaging](tools/packaging).
 
 
+Usage
+-----
 ```c++
-/some/install/dir/bin/cling '#include <stdio.h>' 'printf("Hello World!\n")'`
+./cling '#include <stdio.h>' 'printf("Hello World!\n")'`
 ```
 
 To get started run:
 ```bash
-/some/install/dir/bin/cling --help`
+./cling --help`
 ```
 or type
 ```
-/some/install/dir/bin/cling
+./cling
 [cling]$ .help`
 ```
 
@@ -90,12 +89,17 @@ Developers' Corner
 
 Contributions
 -------------
-Every contribution is very welcome. It is considered as a donation and its
-copyright and any other related rights become exclusive ownership of the person
-who merged the code or in any other case the main developers.
+Every contribution is considered a donation and its copyright and any other
+related rights become exclusive ownership of the person who merged the code or
+in any other case the main developers of the "Cling Project".
 
-In order for a contribution to be accepted it has to obey the previously
-established rules for contribution acceptance in cling's work flow and rules.
+We warmly welcome external contributions to the Cling! By providing code,
+you agree to transfer your copyright on the code to the "Cling project".
+Of course you will be duly credited and your name will appear on the
+contributors page, the release notes, and in the [CREDITS file](CREDITS.txt)
+shipped with every binary and source distribution. The copyright transfer is
+necessary for us to be able to effectively defend the project in case of
+litigation.
 
 
 License

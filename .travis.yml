@@ -22,6 +22,7 @@ env:
     - CLING_BUILD_DEPS=$TRAVIS_BUILD_DIR/deps/
     - CLING_LOCAL_BIN=$TRAVIS_BUILD_DIR/bin/
     - TIMEOUT=0
+    - secure: "DQSDJnYWR7kb2ylcE1e4GIfP9KJadHjG696HelK09zmsTJiRoxg2HhDnm3gHkrPh18AxYJAMW1rZHm0ZsnBKpS09NxOcPVseL+z3iWfBFpgCa2ueUMKHy/YBhNghmLOXVeQzGwol6iCU5xbO4ZMJHpytmQCH6Vm9ws7sg8kiatY="
 
 
 # Do not build our sync branch.
@@ -66,7 +67,11 @@ matrix:
     - os: linux
       compiler: gcc
       addons: *gcc49
-      env: CXX_COMPILER='g++-4.9' CC_COMPILER='gcc-4.9' BUILD_TYPE='Debug'
+      sudo: required
+      dist: trusty
+      env: CXX_COMPILER='g++-4.9' CC_COMPILER='gcc-4.9' BUILD_TYPE='Release'
+           TIMEOUT=2400
+
 
   # 3. OSX Clang Builds
 
@@ -96,7 +101,7 @@ install:
   elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
     CMAKE_URL="https://cmake.org/files/v3.6/cmake-3.6.0-Darwin-x86_64.tar.gz"
     export CMAKE=$CLING_BUILD_DEPS/cmake/CMake.app/Contents/bin/cmake
-    brew install ccache
+    brew install ccache python
     PATH=/usr/local/opt/ccache/libexec:$PATH
     # Try to workaround travis-ci/travis-ci#6410 by
     # introducing a timeout fulction, which will timeout before the builder,
@@ -117,8 +122,6 @@ before_script:
 - export CXX=${CXX_COMPILER}
 - export PATH=$CLING_LOCAL_BIN:$PATH
 
-#- export
-#- which ccache
 - $CMAKE --version
 - $CC --version
 - $CXX --version
@@ -126,9 +129,13 @@ before_script:
 script:
 - |
   if [ -z $TRAVIS_TAG ]; then
+    # Move the tag to newest master
+    git tag --force cling-nightlies HEAD
+    git push --force https://$OAUTH_TOKEN@github.com/${TRAVIS_REPO_SLUG} cling-nightlies
+
     timeout $TIMEOUT tools/packaging/cpt.py --current-dev=tar --with-cling-url=https://github.com/$TRAVIS_REPO_SLUG --verbose --debug-on-error
   else
-    tools/packaging/cpt.py --last-stable=tar --with-cling-url=https://github.com/$TRAVIS_REPO_SLUG
+    tools/packaging/cpt.py --tarball-tag=$TRAVIS_TAG --with-cling-url=https://github.com/$TRAVIS_REPO_SLUG
   fi
 
   # Convert the timeout exit code to 0.
@@ -137,25 +144,33 @@ script:
 - ccache -s
 
 notifications:
-  recipients:
-    - cling-dev@cern.ch
   email:
+    recipients:
+      - cling-dev@cern.ch
     on_success: change
     on_failure: always
-  template:
-    - "%{repository}/%{branch} (%{commit} - %{author}): %{message}"
-    - "Build details: %{build_url}"
-    - "Change view : %{compare_url}"
+    template:
+      - "%{repository}/%{branch} (%{commit} - %{author}): %{message}"
+      - "Build details: %{build_url}"
+      - "Change view : %{compare_url}"
+
 
 before_deploy:
-- export RELEASE_TARBALL=$(ls $HOME/ci/build/cling*.tar.bz2)
-- echo "Deploying $RELEASE_TARBALL to GitHub releases"
+- |
+  export RELEASE_TARBALL=$(ls $HOME/ci/build/cling*.tar.bz2)
+  if [[ $TRAVIS_TAG -eq "cling-nightlies" ]]; then
+    NIGHTLY=$(dirname $RELEASE_TARBALL/`date "+%Y-%b-%d-"``basename $RELEASE_TARBALL`)
+    echo "Renaming $RELEASE_TARBALL to $NIGHTLY"
+    mv $RELEASE_TARBALL $NIGHTLY
+    export RELEASE_TARBALL=$NIGHTLY
+  fi
+  echo "Deploying $RELEASE_TARBALL to GitHub releases"
+
 
 deploy:
   provider: releases
   skip_cleanup: true
-  api_key:
-    secure: eIwVHJNxkAIi6IUYyx7qI1szsgWt3c42ugcJ1vZ6iH//+qJgks77I8dMlbRf0RUrhxpJhJPH5a6vqI/mo1Vq2vmoC8+D1DIQCbj+/WHhY71LQCPC+Wgj2JES5y1Wh91nMt4ybzb1dA8BIfeJOdCUn7ezJTGKk18N+h2jE+a/7IE=
+  api_key: $OAUTH_TOKEN
   file: '${RELEASE_TARBALL}'
   on:
     tags: true
