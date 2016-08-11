@@ -46,7 +46,6 @@ import zipfile
 from email.utils import formatdate
 from datetime import tzinfo
 import time
-import pip
 import multiprocessing
 import fileinput
 import stat
@@ -147,6 +146,9 @@ def box_draw(msg):
 +-----------------------------------------------------------------------------+''' % (msg, spacer))
 
 def pip_install(package):
+    # Needs brew install python. We should only install if we need the
+    # functionality
+    import pip
     pip.main(['install', '--ignore-installed', '--prefix', os.path.join(workdir, 'pip'), '--upgrade', package])
 
 
@@ -402,7 +404,6 @@ def compile(arg):
 
     build_type = 'Debug' if args.get('create_dev_env') else 'Release'
     cmake_config_flags = (
-            '-DLLVM_ENABLE_LIBCXX=ON '
             '-DCMAKE_BUILD_TYPE={0} '
             '-DLLVM_TARGETS_TO_BUILD=host '
             '-DCMAKE_INSTALL_PREFIX={1} '
@@ -1590,7 +1591,7 @@ os.makedirs(TMP_PREFIX)
 
 srcdir = os.path.join(workdir, 'cling-src')
 CLING_SRC_DIR = os.path.join(srcdir, 'tools', 'cling')
-CPT_SRC_DIR = os.path.dirname(__file__)
+CPT_SRC_DIR = os.path.join(srcdir, 'tools', 'packaging')
 LLVM_OBJ_ROOT = os.path.join(workdir, 'builddir')
 prefix = ''
 LLVM_GIT_URL = args['with_llvm_url']

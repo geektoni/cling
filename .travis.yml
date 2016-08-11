@@ -8,6 +8,7 @@ os:
 
 
 cache:
+  apt: true
   ccache: true
   directories:
     - $HOME/.ccache
@@ -22,6 +23,10 @@ env:
     - CLING_BUILD_DEPS=$TRAVIS_BUILD_DIR/deps/
     - CLING_LOCAL_BIN=$TRAVIS_BUILD_DIR/bin/
     - TIMEOUT=0
+    - EXECUTE_COMMAND=
+    - CXX_COMPILER=
+    - CC_COMPILER=
+    - COMPILER_VERSION=
     - secure: "DQSDJnYWR7kb2ylcE1e4GIfP9KJadHjG696HelK09zmsTJiRoxg2HhDnm3gHkrPh18AxYJAMW1rZHm0ZsnBKpS09NxOcPVseL+z3iWfBFpgCa2ueUMKHy/YBhNghmLOXVeQzGwol6iCU5xbO4ZMJHpytmQCH6Vm9ws7sg8kiatY="
 
 
@@ -51,8 +56,7 @@ matrix:
         apt:
           sources: ['llvm-toolchain-precise-3.7', 'ubuntu-toolchain-r-test']
           packages: ['clang-3.7', '^libc\+\+-dev']
-      env: CXX_COMPILER='clang++-3.7' CC_COMPILER='clang-3.7' BUILD_TYPE='Release'
-
+      env: CXX_COMPILER='clang++' CC_COMPILER='clang' COMPILER_VERSION='-3.7' BUILD_TYPE='Release'
 
   # 2. Linux GCC Builds
 
@@ -62,15 +66,19 @@ matrix:
         apt:
           sources: ['ubuntu-toolchain-r-test']
           packages: ['g++-4.9']
-      env: CXX_COMPILER='g++-4.9' CC_COMPILER='gcc-4.9' BUILD_TYPE='Release'
+      env: CXX_COMPILER='g++' CC_COMPILER='gcc' COMPILER_VERSION='-4.9' BUILD_TYPE='Release'
 
     - os: linux
       compiler: gcc
-      addons: *gcc49
+      #addons: *gcc49
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['binutils-gold']
       sudo: required
       dist: trusty
-      env: CXX_COMPILER='g++-4.9' CC_COMPILER='gcc-4.9' BUILD_TYPE='Release'
-           TIMEOUT=2400
+      env: CXX_COMPILER='g++' CC_COMPILER='gcc' COMPILER_VERSION='-4.8' BUILD_TYPE='Release'
+           TIMEOUT=2400 EXECUTE_COMMAND="sudo ln -s `which gold` /usr/local/bin/ld"
 
 
   # 3. OSX Clang Builds
@@ -91,6 +99,10 @@ matrix:
     # The build falls back to an old version and fails.
     - os: linux
       compiler: clang
+    # There are linker failures, which need to be further understood.
+    - os: linux
+      dist: trusty
+
 
 install:
 # If cmake is not in the cache, download it.
@@ -118,20 +130,26 @@ install:
   fi
 
 before_script:
-- export CC=${CC_COMPILER}
-- export CXX=${CXX_COMPILER}
-- export PATH=$CLING_LOCAL_BIN:$PATH
+- |
+  echo "Making $CXX_COMPILER$COMPILER_VERSION and $CC_COMPILER$COMPILER_VERSION default."
+  mkdir -pv $CLING_LOCAL_BIN
+  echo -e "#!/bin/bash\nccache $CXX_COMPILER$COMPILER_VERSION \"\$@\"" > $CLING_LOCAL_BIN/$CXX_COMPILER
+  echo -e "#!/bin/bash\nccache $CC_COMPILER$COMPILER_VERSION \"\$@\"" > $CLING_LOCAL_BIN/$CC_COMPILER
 
-- $CMAKE --version
-- $CC --version
-- $CXX --version
+  chmod +x $CLING_LOCAL_BIN/$CXX_COMPILER
+  chmod +x $CLING_LOCAL_BIN/$CC_COMPILER
+
+- export PATH=$CLING_LOCAL_BIN:$PATH
+- eval $EXECUTE_COMMAND
 
 script:
 - |
   if [ -z $TRAVIS_TAG ]; then
-    # Move the tag to newest master
-    git tag --force cling-nightlies HEAD
-    git push --force https://$OAUTH_TOKEN@github.com/${TRAVIS_REPO_SLUG} cling-nightlies
+    if [ "$TRAVIS_BRANCH" == "master" ]; then
+      # Move the tag to newest master
+      git tag --force cling-nightlies HEAD
+      git push --force https://$OAUTH_TOKEN@github.com/${TRAVIS_REPO_SLUG} cling-nightlies
+    fi
 
     timeout $TIMEOUT tools/packaging/cpt.py --current-dev=tar --with-cling-url=https://github.com/$TRAVIS_REPO_SLUG --verbose --debug-on-error
   else
@@ -146,7 +164,7 @@ script:
 notifications:
   email:
     recipients:
-      - cling-dev@cern.ch
+      #- cling-dev@cern.ch
     on_success: change
     on_failure: always
     template:
@@ -159,7 +177,7 @@ before_deploy:
 - |
   export RELEASE_TARBALL=$(ls $HOME/ci/build/cling*.tar.bz2)
   if [[ $TRAVIS_TAG -eq "cling-nightlies" ]]; then
-    NIGHTLY=$(dirname $RELEASE_TARBALL/`date "+%Y-%b-%d-"``basename $RELEASE_TARBALL`)
+    NIGHTLY="`dirname $RELEASE_TARBALL`/`date "+%Y-%b-%d-"``basename $RELEASE_TARBALL`"
     echo "Renaming $RELEASE_TARBALL to $NIGHTLY"
     mv $RELEASE_TARBALL $NIGHTLY
     export RELEASE_TARBALL=$NIGHTLY
@@ -178,5 +196,28 @@ deploy:
 
 after_failure:
 - |
+  echo "Dumping env."
+  find $CLING_LOCAL_BIN -type f -print0 -exec cat {} \;
+  $CMAKE --version
+  $CC --version
+  $CXX --version
+  ls -al `which ld` && ld -v
+  export
+- |
+  echo "Dumping CMakeOutput.log"
   cat /home/travis/ci/build/builddir/CMakeFiles/CMakeOutput.log
+- |
+  echo "Dumping CMakeError.log"
   cat /home/travis/ci/build/builddir/CMakeFiles/CMakeError.log
+- |
+  echo "Dumping cling-compiledata.h..."
+  COMPILE_DATA_H=$HOME/ci/build/builddir/tools/cling/lib/Interpreter/cling-compiledata.h
+  cat $COMPILE_DATA_H
+
+  echo "Running cling-compiledata compiler..."
+  COMPDATA_CXX=$(cat $COMPILE_DATA_H | cut -c 18- | sed "s,\",,g")
+  eval echo | LC_ALL=C $COMPDATA_CXX -xc++ -E -v -
+- |
+  echo "Dumping `which ccache`"
+  ccache -s
+  ls -la /usr/lib/ccache/ || ls -la /usr/local/opt/ccache/libexec
