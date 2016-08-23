@@ -584,7 +584,7 @@ void clang::DoPrintPreprocessedInput(Preprocessor &PP, raw_ostream *OS,
     PP.addPPCallbacks(std::unique_ptr<PPCallbacks>(Callbacks));
 
     // After we have configured the preprocessor, enter the main file.
-    PP.EnterMainSourceFile();
+    //PP.EnterMainSourceFile();
 
     // Consume all of the tokens that come from the predefines buffer.  Those
     // should not be emitted into the output and are guaranteed to be at the

@@ -196,6 +196,13 @@ namespace cling {
       else
         IncludeCRuntime();
     }
+
+    // Enable token tracking that will be used to generate
+    // only preprocessor code at the end of the execution.
+    if (m_Opts.PreprocessorOnly) {
+      PP.EnableBacktrackAtThisPos();
+    }
+
     // Commit the transactions, now that gCling is set up. It is needed for
     // static initialization in these transactions through local_cxa_atexit().
     for (auto&& I: IncrParserTransactions)
@@ -211,6 +218,7 @@ namespace cling {
     }
 
     m_IncrParser->SetTransformers(isChildInterp);
+
   }
 
   ///\brief Constructor for the child Interpreter.
@@ -242,6 +250,17 @@ namespace cling {
   }
 
   Interpreter::~Interpreter() {
+
+    if (m_Opts.PreprocessorOnly) {
+      Preprocessor& PP = getCI()->getPreprocessor();
+      getCI()->getPreprocessorOutputOpts().ShowCPP = 1;
+      // Since we are at the end of the execution, we re-lex all the token
+      // previously lexed.
+      PP.Backtrack();
+      clang::DoPrintPreprocessedInput(PP, &llvm::outs(),
+                                      getCI()->getPreprocessorOutputOpts());
+    }
+
     if (m_Executor)
       m_Executor->shuttingDown();
     for (size_t i = 0, e = m_StoredStates.size(); i != e; ++i)
