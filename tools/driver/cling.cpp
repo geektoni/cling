@@ -10,12 +10,12 @@
 #include "cling/Interpreter/Interpreter.h"
 #include "cling/MetaProcessor/MetaProcessor.h"
 #include "cling/UserInterface/UserInterface.h"
+#include "cling/Utils/CrashHandler/CrashHandler.h"
 
 #include "clang/Basic/LangOptions.h"
 #include "clang/Frontend/CompilerInstance.h"
 
 #include "llvm/Support/Signals.h"
-#include "llvm/Support/PrettyStackTrace.h"
 #include "llvm/Support/ManagedStatic.h"
 
 #include <iostream>
@@ -31,8 +31,9 @@ int main( int argc, char **argv ) {
 
   llvm::llvm_shutdown_obj shutdownTrigger;
 
-  llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
-  llvm::PrettyStackTraceProgram X(argc, argv);
+  void (*CH)(void*) = llvm::handleCrashSignalWrapper;
+  llvm::sys::AddSignalHandler(CH, nullptr);
+
 
 #if defined(_WIN32) && defined(_MSC_VER)
   // Suppress error dialogs to avoid hangs on build nodes.
