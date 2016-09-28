@@ -1,7 +1,7 @@
 #include <llvm/Support/Signals.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/FileSystem.h>
-#include "StackTraceCHAction.h"
+#include "cling/Utils/CrashHandler/StackTraceCHAction.h"
 
 void StackTraceCHAction::run(CHResult * res) {
   int FD = -1;

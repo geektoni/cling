@@ -15,6 +15,11 @@ add_cling_library(clingUtils OBJECT
   SourceNormalization.cpp
   Validation.cpp
 
+  CrashHandler/CHAction.cpp
+  CrashHandler/CrashHandler.cpp
+  CrashHandler/StackTraceCHAction.cpp
+  CrashHandler/PrintDiagnosticCHAction.cpp
+
   LINK_LIBS
   clangSema
   clangAST

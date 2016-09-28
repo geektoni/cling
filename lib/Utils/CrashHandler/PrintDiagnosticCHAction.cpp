@@ -1,5 +1,5 @@
 #include <llvm/Support/raw_ostream.h>
-#include "PrintDiagnosticCHAction.h"
+#include "cling/Utils/CrashHandler/PrintDiagnosticCHAction.h"
 
 void PrintDiagnosticCHAction::run(CHResult * res) {
   llvm::errs() << "A FATAL ERROR HAS OCCURRED\n"

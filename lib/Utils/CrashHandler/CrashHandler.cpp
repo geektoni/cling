@@ -1,9 +1,9 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/Signals.h>
 #include <llvm/Support/FileSystem.h>
-#include "CrashHandler.h"
-#include "StackTraceCHAction.h"
-#include "PrintDiagnosticCHAction.h"
+#include "cling/Utils/CrashHandler/CrashHandler.h"
+#include "cling/Utils/CrashHandler/StackTraceCHAction.h"
+#include "cling/Utils/CrashHandler/PrintDiagnosticCHAction.h"
 
 using namespace llvm;
 
