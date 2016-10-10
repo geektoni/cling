@@ -63,6 +63,7 @@ namespace {
                                InputArgList& Args) {
     Opts.ErrorOut = Args.hasArg(OPT__errorout);
     Opts.NoLogo = Args.hasArg(OPT__nologo);
+    Opts.RawDebug = Args.hasArg(OPT_rawdebug);
     Opts.ShowVersion = Args.hasArg(OPT_version);
     Opts.Help = Args.hasArg(OPT_help);
     if (Arg* MetaStringArg = Args.getLastArg(OPT__metastr, OPT__metastr_EQ)) {

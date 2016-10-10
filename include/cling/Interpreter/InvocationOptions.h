@@ -64,6 +64,7 @@ namespace cling {
     CompilerOptions CompilerOpts;
 
     bool ErrorOut;
+    bool RawDebug;
     bool NoLogo;
     bool ShowVersion;
     bool Help;
